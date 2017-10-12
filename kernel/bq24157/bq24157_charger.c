@@ -198,7 +198,7 @@ static int bq2415x_enable_charger(struct bq2415x *bq)
 	int ret;
 	u8 val = BQ2415X_CHARGE_ENABLE << BQ2415X_CHARGE_ENABLE_SHIFT;
 
-	ret = bq2415x_update_bits(bq, BQ2425X_REG_01,
+	ret = bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_CHARGE_ENABLE_MASK, val);
 	return ret;
 }
@@ -208,7 +208,7 @@ static int bq2415x_disable_charger(struct bq2415x *bq)
 	int ret;
 	u8 val = BQ2415X_CHARGE_DISABLE << BQ2415X_CHARGE_ENABLE_SHIFT;
 
-	ret = bq2415x_update_bits(bq, BQ2425X_REG_01,
+	ret = bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_CHARGE_ENABLE_MASK, val);
 
 	return ret;
@@ -226,7 +226,7 @@ static int bq2415x_enable_term(struct bq2415x *bq, bool enable)
 
 	val <<= BQ2415X_TERM_ENABLE_SHIFT;
 
-	ret = bq2415x_update_bits(bq, BQ2425X_REG_01,
+	ret = bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_TERM_ENABLE_MASK, val);
 
 	return ret;
@@ -254,7 +254,7 @@ static int bq2415x_set_vbatlow_volt(struct bq2415x *bq, int volt)
 
 	pr_debug("val:0x%02X\n", val);
 	
-	ret = bq2415x_update_bits(bq, BQ2425X_REG_01,
+	ret = bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_WEAK_BATT_VOLT_MASK, val);
 
 	return ret;
@@ -644,7 +644,7 @@ static int bq2415x_charging(struct charger_device *chg_dev, bool enable)
 	pr_err("%s charger %s\n", enable ? "enable" : "disable",
 				  !ret ? "successfully" : "failed");
 	
-	ret = bq2415x_read_byte(bq, BQ2425X_REG_01, &val);
+	ret = bq2415x_read_byte(bq, BQ2415X_REG_01, &val);
 
 	if (!ret)
 		bq->charge_enabled = !!(val & BQ2415X_CHARGE_ENABLE_MASK);
@@ -791,7 +791,7 @@ static int bq2415x_set_input_current_limit(struct charger_device *chg_dev, u32 c
 
 	pr_debug("val:0x%02X\n", val);
 		
-	return bq2415x_update_bits(bq, BQ2425X_REG_01,
+	return bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_IINLIM_MASK, val);
 }
 
@@ -802,7 +802,7 @@ static int bq2415x_get_input_current_limit(struct charger_device *chg_dev, u32 *
 	int ret;
 	int ilim;
 	
-	ret = bq2415x_read_byte(bq, BQ2425X_REG_01, &val);
+	ret = bq2415x_read_byte(bq, BQ2415X_REG_01, &val);
 	if (!ret) {
 		val = val & BQ2415X_IINLIM_MASK;
 		val = val >> BQ2415X_IINLIM_SHIFT;
@@ -845,7 +845,7 @@ static int bq2415x_enable_otg(struct charger_device *chg_dev, bool en)
 	
 	val <<= BQ2415X_OPA_MODE_SHIFT;
 	
-	ret = bq2415x_update_bits(bq, BQ2425X_REG_01,
+	ret = bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_OPA_MODE_MASK, val);
 	
 	return ret;

@@ -23,7 +23,7 @@
 #define BQ2415X_FAULT_SHIFT			0
 
 /* Register 01h */
-#define BQ2425X_REG_01				0x01
+#define BQ2415X_REG_01				0x01
 #define BQ2415X_IINLIM_MASK			0xC0
 #define BQ2415X_IINLIM_SHIFT		6
 #define BQ2415X_IINLIM_100MA		0
