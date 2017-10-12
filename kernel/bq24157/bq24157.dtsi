@@ -1,0 +1,17 @@
+	bq24157@6B {
+		compatible = "ti,bq2415x";
+		reg = <0x6A>;
+
+		/*ti,charging-disabled;*/
+		ti,bq2415x,enable-term;
+		
+		ti,bq2415x,current-sensor-mohm = <55>;
+		ti,bq2415x,charge-voltage = <4400>;
+		ti,bq2415x,charge-current = <1500>;
+		ti,bq2415x,input-current-limit = <0>;/*iin-lim, 0 means no limit*/
+		ti,bq2415x,input-voltage-limit = <4500>;/*vindpm threshold*/
+		ti,bq2415x,vbatlow-volt = <3500>;
+		ti,bq2415x,term-current = <100>;
+		ti,bq2415x,safety-max-charge-current = <1550>;
+		ti,bq2415x,safety-max-charge-voltage = <4400>;
+	};
