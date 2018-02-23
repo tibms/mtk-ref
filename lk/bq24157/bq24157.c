@@ -174,7 +174,7 @@ static int bq2415x_enable_term(struct bq2415x *bq, bool enable)
 
 	val <<= BQ2415X_TERM_ENABLE_SHIFT;
 
-	ret = bq2415x_update_bits(bq, BQ2425X_REG_01,
+	ret = bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_TERM_ENABLE_MASK, val);
 
 	return ret;
@@ -218,7 +218,7 @@ static int bq2415x_enable_charger(struct bq2415x *bq)
 	int ret;
 	u8 val = BQ2415X_CHARGE_ENABLE << BQ2415X_CHARGE_ENABLE_SHIFT;
 
-	ret = bq2415x_update_bits(bq, BQ2425X_REG_01,
+	ret = bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_CHARGE_ENABLE_MASK, val);
 	return ret;
 }
@@ -228,7 +228,7 @@ static int bq2415x_disable_charger(struct bq2415x *bq)
 	int ret;
 	u8 val = BQ2415X_CHARGE_DISABLE << BQ2415X_CHARGE_ENABLE_SHIFT;
 
-	ret = bq2415x_update_bits(bq, BQ2425X_REG_01,
+	ret = bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_CHARGE_ENABLE_MASK, val);
 
 	return ret;
@@ -329,7 +329,7 @@ static int bq2415x_set_aicr(struct mtk_charger_info *mchr_info, u32 curr)
 	val <<= BQ2415X_IINLIM_SHIFT;
 
 		
-	return bq2415x_update_bits(bq, BQ2425X_REG_01,
+	return bq2415x_update_bits(bq, BQ2415X_REG_01,
 				BQ2415X_IINLIM_MASK, val);	
 }
 
@@ -341,7 +341,7 @@ static int bq2415x_get_aicr(struct mtk_charger_info *mchr_info, u32 *curr)
 	u8 val;
 	int ilim;
 	
-	ret = bq2415x_read_byte(bq, BQ2425X_REG_01, &val);
+	ret = bq2415x_read_byte(bq, BQ2415X_REG_01, &val);
 	if (!ret) {
 		val = val & BQ2415X_IINLIM_MASK;
 		val = val >> BQ2415X_IINLIM_SHIFT;
