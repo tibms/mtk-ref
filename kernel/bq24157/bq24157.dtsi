@@ -1,4 +1,4 @@
-	bq24157@6B {
+	bq24157@6A {
 		compatible = "ti,bq2415x";
 		reg = <0x6A>;
 

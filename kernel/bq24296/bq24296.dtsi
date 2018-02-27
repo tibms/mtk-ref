@@ -1,0 +1,13 @@
+	bq24296@6B {
+		compatible = "ti,bq2429x";
+		reg = <0x6B>;
+
+		/*ti,charging-disabled;*/
+		ti,bq2429x,enable-term;
+		
+		ti,bq2429x,charge-voltage = <4400>;
+		ti,bq2429x,charge-current = <1000>;
+		ti,bq2429x,input-current-limit = <1000>;
+		ti,bq2429x,input-voltage-limit = <4500>;/*vindpm threshold*/
+		ti,bq2429x,term-current = <100>;
+	};
