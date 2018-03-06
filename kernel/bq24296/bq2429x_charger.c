@@ -239,8 +239,8 @@ int bq2429x_set_prechg_current(struct bq2429x *bq, int curr)
 {
 	u8 iprechg;
 
-	if (iprechg < REG03_IPRECHG_BASE)
-		iprechg = REG03_IPRECHG_BASE;
+	if (curr < REG03_IPRECHG_BASE)
+		curr = REG03_IPRECHG_BASE;
 
 	iprechg = (curr - REG03_IPRECHG_BASE) / REG03_IPRECHG_LSB;
 	iprechg <<= REG03_IPRECHG_SHIFT; 
@@ -278,25 +278,25 @@ int bq2429x_set_input_current_limit(struct bq2429x *bq, int curr)
 	u8 val;
 
 	switch (curr){
-	case BQ2429X_ILIM_100mA:
+	case 100:
 		val = REG00_IINLIM_100MA;
 		break;
-	case BQ2429X_ILIM_150mA:
+	case 150:
 		val = REG00_IINLIM_150MA;	
 		break;
-	case BQ2429X_ILIM_900mA:
+	case 900:
 		val = REG00_IINLIM_900MA;
 		break;
-	case BQ2429X_ILIM_1000mA:
+	case 1000:
 		val = REG00_IINLIM_1000MA;
 		break;
-	case BQ2429X_ILIM_1500mA:
+	case 1500:
 		val = REG00_IINLIM_1500MA;
 		break;
-	case BQ2429X_ILIM_2000mA:
+	case 2000:
 		val = REG00_IINLIM_2000MA;
 		break;
-	case BQ2429X_ILIM_3000mA:
+	case 3000:
 		val = REG00_IINLIM_3000MA;
 		break;
 	default:
@@ -475,7 +475,7 @@ static int bq2429x_detect_device(struct bq2429x* bq)
     int ret;
     u8 data;
 
-    ret = bq2429x_read_byte(bq, &data, BQ2429X_REG_0A);
+    ret = bq2429x_read_byte(bq, BQ2429X_REG_0A, &data);
     if(ret == 0){
         bq->part_no = (data & REG0A_PN_MASK) >> REG0A_PN_SHIFT;
         bq->revision = (data & REG0A_DEV_REV_MASK) >> REG0A_DEV_REV_SHIFT;
@@ -492,25 +492,25 @@ static int bq2429x_set_charge_profile(struct bq2429x *bq)
 	pr_err("chg_mv:%d, chg_ma:%d, icl_ma:%d, ivl_mv:%d\n",
 			bq->cfg.chg_mv, bq->cfg.chg_ma, bq->cfg.icl_ma, bq->cfg.ivl_mv);
 			
-	ret = bq2429x_set_chargevoltage(bq->chg_dev, bq->cfg.chg_mv * 1000);
+	ret = bq2429x_set_chargevoltage(bq, bq->cfg.chg_mv);
 	if (ret < 0) {
 		pr_err("Failed to set charge voltage:%d\n", ret);
 		return ret;
 	}
 
-	ret = bq2429x_set_chargecurrent(bq->chg_dev, bq->cfg.chg_ma * 1000);
+	ret = bq2429x_set_chargecurrent(bq, bq->cfg.chg_ma);
 	if (ret < 0) {
 		pr_err("Failed to set charge current:%d\n", ret);
 		return ret;
 	}
 
-	ret = bq2429x_set_input_current_limit(bq->chg_dev, bq->cfg.icl_ma * 1000);
+	ret = bq2429x_set_input_current_limit(bq, bq->cfg.icl_ma);
 	if (ret < 0) {
 		pr_err("Failed to set input current limit:%d\n", ret);
 		return ret;
 	}
 
-	ret = bq2429x_set_input_volt_limit(bq->chg_dev, bq->cfg.ivl_mv * 1000);
+	ret = bq2429x_set_input_volt_limit(bq, bq->cfg.ivl_mv);
 	if (ret < 0) {
 		pr_err("Failed to set input voltage limit:%d\n", ret);
 		return ret;
@@ -574,10 +574,10 @@ static void bq2429x_check_status(struct bq2429x *bq)
 	int ret;
 	u8 val = 0;
 	
-	ret = bq2429x_read_byte(bq, BQ2415X_REG_00, &val);
+	ret = bq2429x_read_byte(bq, BQ2429X_REG_08, &val);
 	if (!ret) {
-		bq->charge_state = (val & BQ2415X_STAT_MASK)
-							>> BQ2415X_STAT_SHIFT;
+		bq->charge_state = (val & REG08_CHRG_STAT_MASK)
+							>> REG08_CHRG_STAT_SHIFT;
 		pr_err("Charge State:%s\n", chg_state_str[bq->charge_state]);
 	}
 }
@@ -670,7 +670,7 @@ static int bq2429x_is_charging_done(struct charger_device *chg_dev, bool *done)
 	if (!ret) {
 		val = val & REG08_CHRG_STAT_MASK;
 		val = val >> REG08_CHRG_STAT_SHIFT;
-		*done = (val == CHARGE_STATE_CHGDONE);	
+		*done = (val == REG08_CHRG_STAT_CHGDONE);	
 	}
 	
 	return ret;
@@ -743,7 +743,6 @@ static int bq2429x_get_vchg(struct charger_device *chg_dev, u32 *cv)
 static int bq2429x_set_ivl(struct charger_device *chg_dev, u32 volt)
 {
 	struct bq2429x *bq = dev_get_drvdata(&chg_dev->dev);
-	u8 val;
 
 	volt /= 1000; /*to mV*/
 	return bq2429x_set_input_volt_limit(bq, volt);
@@ -753,7 +752,6 @@ static int bq2429x_set_ivl(struct charger_device *chg_dev, u32 volt)
 static int bq2429x_set_icl(struct charger_device *chg_dev, u32 curr)
 {
 	struct bq2429x *bq = dev_get_drvdata(&chg_dev->dev);
-	u8 val;
 	
 	curr /= 1000;/*to mA*/
 	
@@ -767,7 +765,7 @@ static int bq2429x_get_icl(struct charger_device *chg_dev, u32 *curr)
 	int ret;
 	int ilim = 0;
 	
-	ret = bq2429x_read_byte(bq, BQ2415X_REG_00, &val);
+	ret = bq2429x_read_byte(bq, BQ2429X_REG_00, &val);
 	if (!ret) {
 		val = val & REG00_IINLIM_MASK;
 		val = val >> REG00_IINLIM_SHIFT;
@@ -818,7 +816,6 @@ static int bq2429x_set_otg(struct charger_device *chg_dev, bool en)
 {
 	struct bq2429x *bq = dev_get_drvdata(&chg_dev->dev);
 	int ret;
-	u8 val;
 	
 	if (en)
 		ret = bq2429x_enable_otg(bq);
@@ -849,7 +846,7 @@ static int bq2429x_is_safety_timer_enabled(struct charger_device *chg_dev, bool 
 	int ret;
 	u8 reg_val;
 
-	ret = bq2429x_read_byte(bq, &reg_val, BQ2560X_REG_05);
+	ret = bq2429x_read_byte(bq, BQ2560X_REG_05, &reg_val);
 
 	if (!ret) 
 		*en = !!(reg_val & REG05_EN_TIMER_MASK);
@@ -935,7 +932,7 @@ static int bq2429x_charger_probe(struct i2c_client *client,
 			return ret;
 		}
 	} else {
-		pr_err("No device tree node for bq24157\n");
+		pr_err("No device tree node for bq2429x\n");
 		return -ENODEV;
 	}
 
@@ -1017,6 +1014,6 @@ static struct i2c_driver bq2429x_charger_driver = {
 
 module_i2c_driver(bq2429x_charger_driver);
 
-MODULE_DESCRIPTION("TI BQ2415x Charger Driver");
+MODULE_DESCRIPTION("TI BQ2429x Charger Driver");
 MODULE_LICENSE("GPL2");
 MODULE_AUTHOR("Texas Instruments");
