@@ -6,7 +6,6 @@
  * This package is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
  * THIS PACKAGE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
@@ -34,6 +33,7 @@
 
 #include "mtk_charger_intf.h"
 #include "bq2560x_reg.h"
+#include "bq2560x.h"
 
 #if 1
 #undef pr_debug
@@ -74,7 +74,12 @@ struct bq2560x {
 	bool charge_enabled;/* Register bit status */
 
 	struct bq2560x_platform_data* platform_data;
+	struct charger_device *chg_dev;
+	
+};
 
+static const struct charger_properties bq2560x_chg_props = {
+	.alias_name = "bq2560x",
 };
 
 static int __bq2560x_read_reg(struct bq2560x* bq, u8 reg, u8 *data)
@@ -109,11 +114,6 @@ static int bq2560x_read_byte(struct bq2560x *bq, u8 *data, u8 reg)
 {
 	int ret;
 
-	if (bq->skip_reads) {
-		*data = 0;
-		return 0;
-	}
-
 	mutex_lock(&bq->i2c_rw_lock);
 	ret = __bq2560x_read_reg(bq, reg, data);
 	mutex_unlock(&bq->i2c_rw_lock);
@@ -125,10 +125,6 @@ static int bq2560x_read_byte(struct bq2560x *bq, u8 *data, u8 reg)
 static int bq2560x_write_byte(struct bq2560x *bq, u8 reg, u8 data)
 {
 	int ret;
-
-	if (bq->skip_writes) {
-		return 0;
-	}
 
 	mutex_lock(&bq->i2c_rw_lock);
 	ret = __bq2560x_write_reg(bq, reg, data);
@@ -147,10 +143,6 @@ static int bq2560x_update_bits(struct bq2560x *bq, u8 reg,
 {
 	int ret;
 	u8 tmp;
-
-
-	if (bq->skip_reads || bq->skip_writes)
-		return 0;
 
 	mutex_lock(&bq->i2c_rw_lock);
 	ret = __bq2560x_read_reg(bq, reg, &tmp);
@@ -521,11 +513,12 @@ static struct bq2560x_platform_data* bq2560x_parse_dt(struct device *dev,
 		pr_err("Out of memory\n");
 		return NULL;
 	}
-	
+#if 0	
 	ret = of_property_read_u32(np, "ti,bq2560x,chip-enable-gpio", &bq->gpio_ce);
     if(ret) {
 		pr_err("Failed to read node of ti,bq2560x,chip-enable-gpio\n");
 	}
+#endif
 
     ret = of_property_read_u32(np,"ti,bq2560x,usb-vlim",&pdata->usb.vlim);
     if(ret) {
@@ -638,6 +631,7 @@ static void bq2560x_dump_regs(struct bq2560x *bq)
 {
 	int addr;
 	u8 val;
+	int ret;
 
 	for (addr = 0x0; addr <= 0x0B; addr++) {
 		ret = bq2560x_read_byte(bq, &val, addr);
@@ -717,7 +711,7 @@ static int bq2560x_charging(struct charger_device *chg_dev, bool enable)
 	ret = bq2560x_read_byte(bq, &val, BQ2560X_REG_01);
 
 	if (!ret)
-		bq->charge_enabled = !!(val & BQ2415X_CHG_CONFIG_MASK);
+		bq->charge_enabled = !!(val & REG01_CHG_CONFIG_MASK);
 	
 	return ret;
 }
@@ -771,11 +765,11 @@ static int bq2560x_is_charging_done(struct charger_device *chg_dev, bool *done)
 	int ret;
 	u8 val;
 	
-	ret = bq2560x_read_byte(bq, &val, BQ2415X_REG_08);
+	ret = bq2560x_read_byte(bq, &val, BQ2560X_REG_08);
 	if (!ret) {
 		val = val & REG08_CHRG_STAT_MASK;
 		val = val >> REG08_CHRG_STAT_SHIFT;
-		*done = (val == CHARGE_STATE_DONE);	
+		*done = (val == REG08_CHRG_STAT_CHGDONE);	
 	}
 	
 	return ret;
@@ -884,12 +878,26 @@ static int bq2560x_kick_wdt(struct charger_device *chg_dev)
 static int bq2560x_set_otg(struct charger_device *chg_dev, bool en)
 {
 	int ret;
+	struct bq2560x *bq = dev_get_drvdata(&chg_dev);
 	
 	if (en)
 		ret = bq2560x_enable_otg(bq);
 	else
 		ret = bq2560x_disable_otg(bq);
 	
+	return ret;
+}
+
+static int bq2560x_set_safety_timer(struct charger_device *chg_dev, bool en)
+{
+	struct bq2560x *bq = dev_get_drvdata(&chg_dev);
+	int ret;
+		
+	if (en)
+		ret = bq2560x_enable_safety_timer(bq);
+	else
+		ret = bq2560x_disable_safety_timer(bq);
+		
 	return ret;
 }
 
@@ -937,7 +945,7 @@ static struct charger_ops bq2560x_chg_ops = {
 	.get_min_charging_current = bq2560x_get_min_ichg,
 
 	/* Safety timer */
-	.enable_safety_timer = bq2560x_enable_safety_timer,
+	.enable_safety_timer = bq2560x_set_safety_timer,
 	.is_safety_timer_enabled = bq2560x_is_safety_timer_enabled,
 
 	/* Power path */
@@ -945,7 +953,7 @@ static struct charger_ops bq2560x_chg_ops = {
 	.is_powerpath_enabled = NULL,
 
 	/* OTG */
-	.enable_otg = bq2560x_enable_otg,
+	.enable_otg = bq2560x_set_otg,
 	.set_boost_current_limit = bq2560x_set_boost_ilmt,
 	.enable_discharge = NULL,
 
@@ -953,7 +961,7 @@ static struct charger_ops bq2560x_chg_ops = {
 	.send_ta_current_pattern = NULL,
 	.set_pe20_efficiency_table = NULL,
 	.send_ta20_current_pattern = NULL,
-	.set_ta20_reset = NULL,
+//	.set_ta20_reset = NULL,
 	.enable_cable_drop_comp = NULL,
 
 	/* ADC */
@@ -1002,7 +1010,7 @@ static int bq2560x_charger_probe(struct i2c_client *client,
 	bq->chg_dev = charger_device_register("bq25601",
 			&client->dev, bq, 
 			&bq2560x_chg_ops,
-			&bq->chg_props);
+			&bq2560x_chg_props);
 	if (IS_ERR_OR_NULL(bq->chg_dev)) {
 		ret = PTR_ERR(bq->chg_dev);
 		goto err_0;

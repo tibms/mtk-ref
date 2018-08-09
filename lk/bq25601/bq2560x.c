@@ -1,4 +1,3 @@
-
 #include <platform/mt_typedefs.h>
 #include <platform/mt_reg_base.h>
 #include <platform/errno.h>
@@ -31,7 +30,7 @@ struct bq2560x_config {
 };
 
 
-struct struct bq2560x {
+struct bq2560x {
 	struct mtk_charger_info mchr_info;
 	struct mt_i2c_t i2c;
 	struct bq2560x_config cfg;
@@ -97,7 +96,7 @@ static int bq2560x_update_bits(struct bq2560x *bq, u8 reg,
 	return ret;
 }
 
-static bool bq2560x_is_hw_exist(struct bq2560x *info)
+static bool bq2560x_is_hw_exist(struct bq2560x *bq)
 {
 	int ret;
 	u8 data;
@@ -109,7 +108,7 @@ static bool bq2560x_is_hw_exist(struct bq2560x *info)
 	partno = (data & REG0B_PN_MASK) >> REG0B_PN_SHIFT;
 	rev = (data & REG0B_DEV_REV_MASK) >> REG0B_DEV_REV_SHIFT;
 	if (partno != BQ25601) {
-		dprintf(CRITICAL, "%s: incorrect part number, not bq2560x\n");
+		dprintf(CRITICAL, "%s: incorrect part number, not bq2560x\n", partno);
 		return false;
 	}
 	dprintf(CRITICAL, "%s: chip PN:%d, rev:%d\n", __func__, partno,
@@ -135,34 +134,6 @@ static int bq2560x_enable_term(struct bq2560x *bq, bool enable)
 				REG05_EN_TERM_MASK, val);
 
 	return ret;
-}
-
-static int bq2560x_init_setting(struct bq2560x *bq)
-{
-	int ret = 0;
-
-	dprintf(CRITICAL, "%s\n", __func__);
-	
-	ret = bq2560x_set_vchg(bq, bq->cfg.chg_mv * 1000);
-	if (ret < 0)
-		dprintf(CRITICAL, "%s: set chargevolt failed\n", __func__);
-	
-	ret = bq2560x_set_ichg(&bq->mchr_info, bq->cfg.chg_ma * 1000);
-	if (ret < 0)
-		dprintf(CRITICAL, "%s: set ichg failed\n", __func__);
-
-	ret = bq2560x_set_aicr(&bq->mchr_info, bq->cfg.icl_ma * 1000);
-	if (ret < 0)
-		dprintf(CRITICAL, "%s: set aicr failed\n", __func__);
-
-	ret = bq2560x_set_mivr(&bq->mchr_info, bq->cfg.ivl_mv * 1000);
-	if (ret < 0)
-		dprintf(CRITICAL, "%s: set mivr failed\n", __func__);
-	
-	ret = bq2560x_enable_term(bq, true);
-	if (ret < 0)
-		dprintf(CRITICAL, "%s: failed to enable termination\n", __func__);
-	
 }
 
 
@@ -200,12 +171,13 @@ static int bq2560x_dump_register(struct mtk_charger_info *mchr_info)
 	u8 val;
 
 	for (addr = 0x00; addr <= 0x0B; addr++) {
-		msleep(2);
+		mdelay(2);
 		ret = bq2560x_read_byte(bq, addr, &val);
 		if (!ret)
 			dprintf(CRITICAL,"%s:Reg[%02X] = 0x%02X\n", __func__, addr, val);
 	}
-
+	
+	return ret;
 }
 
 static int bq2560x_enable_charging(struct mtk_charger_info *mchr_info,
@@ -239,7 +211,7 @@ static int bq2560x_set_vchg(struct mtk_charger_info *mchr_info, u32 vchg)
 	reg_vchg <<= REG04_VREG_SHIFT;
 
 	return bq2560x_update_bits(bq, BQ2560X_REG_04,
-				BQ2560X_VREG_MASK, reg_vchg);
+				REG04_VREG_MASK, reg_vchg);
 }
 
 
@@ -251,10 +223,10 @@ static int bq2560x_set_ichg(struct mtk_charger_info *mchr_info, u32 ichg)
 	u8 reg_ichg;
 	
 	ichg /= 1000; /*to mA */
-
+#if 0
 	if (ichg < REG02_ICHG_BASE)
 		ichg = REG02_ICHG_BASE;
-	
+#endif	
 	reg_ichg = (ichg - REG02_ICHG_BASE) / REG02_ICHG_LSB;
 
 	reg_ichg <<= REG02_ICHG_SHIFT;
@@ -304,7 +276,7 @@ static int bq2560x_set_aicr(struct mtk_charger_info *mchr_info, u32 curr)
 
 static int bq2560x_get_aicr(struct mtk_charger_info *mchr_info, u32 *curr)
 {
-	struct bq2560x *bq = (struct rt9458_info *)mchr_info;
+	struct bq2560x *bq = (struct bq2560x *)mchr_info;
 	int ret = 0;
 	u8 val;
 	int ilim;
@@ -339,8 +311,38 @@ static int bq2560x_set_mivr(struct mtk_charger_info *mchr_info, u32 mivr)
 	
 	return bq2560x_update_bits(bq, BQ2560X_REG_06,
 				REG06_VINDPM_MASK, reg_mivr);
-}	
+
 }
+
+static int bq2560x_init_setting(struct bq2560x *bq)
+{
+	int ret = 0;
+
+	dprintf(CRITICAL, "%s\n", __func__);
+	
+	ret = bq2560x_set_vchg(bq, bq->cfg.chg_mv * 1000);
+	if (ret < 0)
+		dprintf(CRITICAL, "%s: set chargevolt failed\n", __func__);
+	
+	ret = bq2560x_set_ichg(&bq->mchr_info, bq->cfg.chg_ma * 1000);
+	if (ret < 0)
+		dprintf(CRITICAL, "%s: set ichg failed\n", __func__);
+
+	ret = bq2560x_set_aicr(&bq->mchr_info, bq->cfg.icl_ma * 1000);
+	if (ret < 0)
+		dprintf(CRITICAL, "%s: set aicr failed\n", __func__);
+
+	ret = bq2560x_set_mivr(&bq->mchr_info, bq->cfg.ivl_mv * 1000);
+	if (ret < 0)
+		dprintf(CRITICAL, "%s: set mivr failed\n", __func__);
+	
+	ret = bq2560x_enable_term(bq, true);
+	if (ret < 0)
+		dprintf(CRITICAL, "%s: failed to enable termination\n", __func__);
+
+	return ret;
+}
+
 
 static struct mtk_charger_ops bq2560x_mchr_ops = {
 	.dump_register = bq2560x_dump_register,
