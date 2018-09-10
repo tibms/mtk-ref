@@ -3,7 +3,6 @@
 #include <platform/errno.h>
 #include <platform/mt_i2c.h>
 #include <platform/mt_pmic.h>
-#include <platform/bq2560x.h>
 #include <platform/mtk_charger_intf.h>
 #include <printf.h>
 
