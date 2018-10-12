@@ -1,0 +1,17 @@
+
+bq2588x@6B {
+	compatible = "ti,bq2588x";
+	reg = <0x6B>;
+	
+	ti,bq2588x,usb-vlim = <4600>;
+	ti,bq2588x,usb-ilim = <500>;
+	ti,bq2588x,usb-vreg = <8800>;
+	ti,bq2588x,usb-ichg = <1500>;
+
+	ti,bq2588x,precharge-current = <150>;
+	ti,bq2588x,termination-current = <150>;
+	ti,bq2588x,otg-voltage = <5100>;
+	ti,bq2588x,otg-current = <2000>;
+	ti,bq2588x,enable_term;
+
+};
