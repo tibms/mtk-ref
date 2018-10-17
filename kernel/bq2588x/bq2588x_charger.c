@@ -1094,7 +1094,7 @@ static int bq2588x_plug_in(struct charger_device *chg_dev)
 
 	ret = bq2588x_charging(chg_dev, true);
 
-	if (!ret)
+	if (ret)
 		pr_err("Failed to enable charging:%d\n", ret);
 	
 	return ret;
@@ -1106,7 +1106,7 @@ static int bq2588x_plug_out(struct charger_device *chg_dev)
 
 	ret = bq2588x_charging(chg_dev, false);
 
-	if (!ret)
+	if (ret)
 		pr_err("Failed to disable charging:%d\n", ret);
 	
 	return ret;
