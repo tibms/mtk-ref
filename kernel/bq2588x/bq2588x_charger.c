@@ -98,6 +98,7 @@ struct bq2588x {
 	int die_temp;
 	int ts_temp;
 
+	bool saved_charge_enable;
 	bool charge_enabled;	/* Register bit status */
 	bool otg_enabled;
 	bool vindpm_triggered;
@@ -1250,6 +1251,14 @@ static int bq2588x_set_otg(struct charger_device *chg_dev, bool en)
 	int ret;
 	struct bq2588x *bq = dev_get_drvdata(&chg_dev);
 	
+	if (en) {
+		bq->saved_charge_enable = bq->charge_enabled;
+		if (bq->charge_enabled)
+			bq2588x_charging(chg_dev, false);
+	} else {
+		bq2588x_charging(chg_dev, bq->saved_charge_enable);
+	}
+
 	ret = bq2588x_otg_enable(bq, en);
 
 	return ret;
