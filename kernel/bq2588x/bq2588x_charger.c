@@ -1250,7 +1250,11 @@ static int bq2588x_set_otg(struct charger_device *chg_dev, bool en)
 {
 	int ret;
 	struct bq2588x *bq = dev_get_drvdata(&chg_dev);
+
+	/*clear hiz mode in case of entering hiz during to some fault*/
 	
+	bq2588x_set_hiz_mode(bq, false);
+
 	if (en) {
 		bq->saved_charge_enable = bq->charge_enabled;
 		if (bq->charge_enabled)
