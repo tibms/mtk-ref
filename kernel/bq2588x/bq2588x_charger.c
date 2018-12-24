@@ -1249,7 +1249,7 @@ static int bq2588x_kick_wdt(struct charger_device *chg_dev)
 static int bq2588x_set_otg(struct charger_device *chg_dev, bool en)
 {
 	int ret;
-	struct bq2588x *bq = dev_get_drvdata(&chg_dev);
+	struct bq2588x *bq = dev_get_drvdata(&chg_dev->dev);
 
 	/*clear hiz mode in case of entering hiz during to some fault*/
 	
@@ -1270,7 +1270,7 @@ static int bq2588x_set_otg(struct charger_device *chg_dev, bool en)
 
 static int bq2588x_set_safety_timer(struct charger_device *chg_dev, bool en)
 {
-	struct bq2588x *bq = dev_get_drvdata(&chg_dev);
+	struct bq2588x *bq = dev_get_drvdata(&chg_dev->dev);
 	int ret;
 		
 	ret = bq2588x_enable_safety_timer(bq);

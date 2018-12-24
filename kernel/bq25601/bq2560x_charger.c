@@ -723,7 +723,7 @@ static int bq2560x_plug_in(struct charger_device *chg_dev)
 
 	ret = bq2560x_charging(chg_dev, true);
 
-	if (!ret)
+	if (ret)
 		pr_err("Failed to enable charging:%d\n", ret);
 	
 	return ret;
@@ -735,7 +735,7 @@ static int bq2560x_plug_out(struct charger_device *chg_dev)
 
 	ret = bq2560x_charging(chg_dev, false);
 
-	if (!ret)
+	if (ret)
 		pr_err("Failed to disable charging:%d\n", ret);
 	
 	return ret;
@@ -779,6 +779,8 @@ static int bq2560x_set_ichg(struct charger_device *chg_dev, u32 curr)
 {
 	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
 
+	pr_err("charge curr = %d\n", curr);
+
 	return bq2560x_set_chargecurrent(bq, curr/1000);
 }
 
@@ -813,6 +815,8 @@ static int bq2560x_set_vchg(struct charger_device *chg_dev, u32 volt)
 	
 	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
 
+	pr_err("charge volt = %d\n", volt);
+
 	return bq2560x_set_chargevolt(bq, volt/1000);	
 }
 
@@ -838,6 +842,8 @@ static int bq2560x_set_ivl(struct charger_device *chg_dev, u32 volt)
 
 	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
 
+	pr_err("vindpm volt = %d\n", volt);
+
 	return bq2560x_set_input_volt_limit(bq, volt/1000);
 
 }
@@ -846,6 +852,8 @@ static int bq2560x_set_icl(struct charger_device *chg_dev, u32 curr)
 {
 
 	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
+
+	pr_err("indpm curr = %d\n", curr);
 
 	return bq2560x_set_input_current_limit(bq, curr/1000);
 }
@@ -878,19 +886,22 @@ static int bq2560x_kick_wdt(struct charger_device *chg_dev)
 static int bq2560x_set_otg(struct charger_device *chg_dev, bool en)
 {
 	int ret;
-	struct bq2560x *bq = dev_get_drvdata(&chg_dev);
+	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
 	
 	if (en)
 		ret = bq2560x_enable_otg(bq);
 	else
 		ret = bq2560x_disable_otg(bq);
-	
+
+	pr_err("%s OTG %s\n", en ? "enable" : "disable",
+				!ret ? "successfully" : "failed");
+
 	return ret;
 }
 
 static int bq2560x_set_safety_timer(struct charger_device *chg_dev, bool en)
 {
-	struct bq2560x *bq = dev_get_drvdata(&chg_dev);
+	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
 	int ret;
 		
 	if (en)
@@ -920,6 +931,8 @@ static int bq2560x_set_boost_ilmt(struct charger_device *chg_dev, u32 curr)
 {
 	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
 	int ret;
+	
+	pr_err("otg curr = %d\n", curr);
 
 	ret = bq2560x_set_boost_current(bq, curr/1000);
 

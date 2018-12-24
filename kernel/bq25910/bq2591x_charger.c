@@ -512,7 +512,7 @@ static const struct attribute_group bq2591x_attr_group = {
 
 static int bq2591x_charging(struct charger_device *chg_dev, bool enable)
 {
-	struct bq2591x *bq = dev_get_drvdata(dev);
+	struct bq2591x *bq = dev_get_drvdata(&chg_dev->dev);
 	int ret = 0;
 	u8 val;
 
@@ -534,7 +534,7 @@ static int bq2591x_charging(struct charger_device *chg_dev, bool enable)
 
 static int bq2591x_is_charging_enable(struct charger_device *chg_dev, bool *en)
 {
-	struct bq2591x *bq = dev_get_drvdata(dev);
+	struct bq2591x *bq = dev_get_drvdata(&chg_dev->dev);
 	
 	*en = bq->charge_enabled;
 	
@@ -543,7 +543,7 @@ static int bq2591x_is_charging_enable(struct charger_device *chg_dev, bool *en)
 
 static int bq2591x_is_charging_done(struct charger_device *chg_dev, bool *done)
 {
-	struct bq2591x *bq = dev_get_drvdata(dev);
+	struct bq2591x *bq = dev_get_drvdata(&chg_dev->dev);
 	int ret;
 	u8 val;
 	
