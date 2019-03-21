@@ -36,7 +36,7 @@ enum vboost {
 	BOOSTV_4850 = 4850,
 	BOOSTV_5000 = 5000,
 	BOOSTV_5150 = 5150,
-	BOOSTV_5300	= 5300,
+	BOOSTV_5300 = 5300,
 };
 
 enum iboost {
@@ -46,9 +46,9 @@ enum iboost {
 
 enum vac_ovp {
 	VAC_OVP_5500 = 5500,
-	VAC_OVP_6200 = 6200,
+	VAC_OVP_6500 = 6500,
 	VAC_OVP_10500 = 10500,
-	VAC_OVP_14300 = 14300,
+	VAC_OVP_14000 = 14000,
 };
 
 
