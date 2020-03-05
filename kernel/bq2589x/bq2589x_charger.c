@@ -248,7 +248,7 @@ int bq2589x_adc_start(struct bq2589x *bq, bool oneshot)
 	u8 val;
 	int ret;
 
-	ret = bq2589x_read_byte(bq, &val, BQ2589X_REG_02);
+	ret = bq2589x_read_byte(bq, BQ2589X_REG_02, &val);
 	if (ret < 0) {
 		dev_err(bq->dev, "%s failed to read register 0x02:%d\n", __func__, ret);
 		return ret;
@@ -279,7 +279,7 @@ int bq2589x_adc_read_battery_volt(struct bq2589x *bq)
 	uint8_t val;
 	int volt;
 	int ret;
-	ret = bq2589x_read_byte(bq, &val, BQ2589X_REG_0E);
+	ret = bq2589x_read_byte(bq, BQ2589X_REG_0E, &val);
 	if (ret < 0) {
 		dev_err(bq->dev, "read battery voltage failed :%d\n", ret);
 		return ret;
@@ -296,7 +296,7 @@ int bq2589x_adc_read_sys_volt(struct bq2589x *bq)
 	uint8_t val;
 	int volt;
 	int ret;
-	ret = bq2589x_read_byte(bq, &val, BQ2589X_REG_0F);
+	ret = bq2589x_read_byte(bq,  BQ2589X_REG_0F, &val);
 	if (ret < 0) {
 		dev_err(bq->dev, "read system voltage failed :%d\n", ret);
 		return ret;
@@ -312,7 +312,7 @@ int bq2589x_adc_read_vbus_volt(struct bq2589x *bq)
 	uint8_t val;
 	int volt;
 	int ret;
-	ret = bq2589x_read_byte(bq, &val, BQ2589X_REG_11);
+	ret = bq2589x_read_byte(bq, BQ2589X_REG_11, &val);
 	if (ret < 0) {
 		dev_err(bq->dev, "read vbus voltage failed :%d\n", ret);
 		return ret;
@@ -328,7 +328,7 @@ int bq2589x_adc_read_temperature(struct bq2589x *bq)
 	uint8_t val;
 	int temp;
 	int ret;
-	ret = bq2589x_read_byte(bq, &val, BQ2589X_REG_10);
+	ret = bq2589x_read_byte(bq, BQ2589X_REG_10, &val);
 	if (ret < 0) {
 		dev_err(bq->dev, "read temperature failed :%d\n", ret);
 		return ret;
@@ -344,7 +344,7 @@ int bq2589x_adc_read_charge_current(struct bq2589x *bq)
 	uint8_t val;
 	int volt;
 	int ret;
-	ret = bq2589x_read_byte(bq, &val, BQ2589X_REG_12);
+	ret = bq2589x_read_byte(bq, BQ2589X_REG_12, &val);
 	if (ret < 0) {
 		dev_err(bq->dev, "read charge current failed :%d\n", ret);
 		return ret;
@@ -516,7 +516,7 @@ int bq2589x_get_hiz_mode(struct bq2589x *bq, u8 *state)
 	u8 val;
 	int ret;
 
-	ret = bq2589x_read_byte(bq, &val, BQ2589X_REG_00);
+	ret = bq2589x_read_byte(bq, BQ2589X_REG_00, &val);
 	if (ret)
 		return ret;
 	*state = (val & BQ2589X_ENHIZ_MASK) >> BQ2589X_ENHIZ_SHIFT;
@@ -633,7 +633,7 @@ static int bq2589x_read_idpm_limit(struct bq2589x *bq)
 	int curr;
 	int ret;
 
-	ret = bq2589x_read_byte(bq, &val, BQ2589X_REG_13);
+	ret = bq2589x_read_byte(bq, BQ2589X_REG_13, &val);
 	if (ret < 0) {
 		dev_err(bq->dev, "read vbus voltage failed :%d\n", ret);
 		return ret;
