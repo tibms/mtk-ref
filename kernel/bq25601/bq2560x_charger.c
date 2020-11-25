@@ -43,6 +43,10 @@ enum {
 	PN_BQ25601D,
 };
 
+enum bq2560x_part_no {
+	BQ25601 = 0x02,
+};
+
 static int pn_data[] = {
 	[PN_BQ25600] = 0x00,
 	[PN_BQ25600D] = 0x01,
@@ -700,7 +704,7 @@ static int bq2560x_register_interrupt(struct bq2560x *bq)
 	int ret = 0;
 	struct device_node *np;
 
-	np = of_find_node_by_name(NULL, bq->eint_name);
+	/*np = of_find_node_by_name(NULL, bq->eint_name);
 	if (np) {
 		bq->irq = irq_of_parse_and_map(np, 0);
 	} else {
@@ -708,12 +712,17 @@ static int bq2560x_register_interrupt(struct bq2560x *bq)
 		return -ENODEV;
 	}
 
-	pr_info("irq = %d\n", bq->irq);
+	pr_info("irq = %d\n", bq->irq);*/
 
-	ret = devm_request_threaded_irq(bq->dev, bq->irq, NULL,
+	if (! bq->client->irq) {
+		pr_info("bq->client->irq is NULL\n");//remember to config dws
+		return -ENODEV;
+	}
+
+	ret = devm_request_threaded_irq(bq->dev, bq->client->irq, NULL,
 					bq2560x_irq_handler,
 					IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
-					bq->eint_name, bq);
+					"ti_irq", bq);
 	if (ret < 0) {
 		pr_err("request thread irq failed:%d\n", ret);
 		return ret;
