@@ -36,11 +36,14 @@
 #include "bq2560x_reg.h"
 #include "bq2560x.h"
 
+//#define BQ25611
+
 enum {
 	PN_BQ25600,
 	PN_BQ25600D,
 	PN_BQ25601,
 	PN_BQ25601D,
+	PN_BQ25611,
 };
 
 enum bq2560x_part_no {
@@ -52,6 +55,7 @@ static int pn_data[] = {
 	[PN_BQ25600D] = 0x01,
 	[PN_BQ25601] = 0x02,
 	[PN_BQ25601D] = 0x07,
+	[PN_BQ25611] = 0xFF,
 };
 
 static char *pn_str[] = {
@@ -59,6 +63,7 @@ static char *pn_str[] = {
 	[PN_BQ25600D] = "bq25600d",
 	[PN_BQ25601] = "bq25601",
 	[PN_BQ25601D] = "bq25601d",
+	[PN_BQ25611] = "bq25611",
 };
 
 struct bq2560x {
@@ -250,6 +255,36 @@ int bq2560x_set_prechg_current(struct bq2560x *bq, int curr)
 }
 EXPORT_SYMBOL_GPL(bq2560x_set_prechg_current);
 
+#ifdef BQ25611
+int bq2560x_set_chargevolt(struct bq2560x *bq, int volt)
+{
+	int i;
+	unsigned int vbatreg_reg_code;
+	unsigned int array_size = ARRAY_SIZE(bq25611_vbatreg_values);
+
+	if (volt < BQ25611_VBATREG_MIN_uV)
+		volt = BQ25611_VBATREG_MIN_uV;
+	else if (volt > BQ25611_VBATREG_MAX_uV)
+		volt = BQ25611_VBATREG_MAX_uV;
+
+	if (volt > BQ25611_VBATREG_THRESH_uV)
+		vbatreg_reg_code = ((volt -
+		BQ25611_VBATREG_THRESH_uV) /
+		(BQ25611_VBATREG_STEP_uV)) + BQ25611_VBATREG_THRESH;
+	else {
+		for (i = array_size - 1; i > 0; i--) {
+			if (volt >= bq25611_vbatreg_values[i]) {
+				vbatreg_reg_code = i;
+				break;
+			}
+			vbatreg_reg_code = i;
+		}
+	}
+
+	return bq2560x_update_bits(bq, BQ2560X_REG_04, REG04_VREG_MASK,
+				   vbatreg_reg_code << REG04_VREG_SHIFT);
+}
+#else
 int bq2560x_set_chargevolt(struct bq2560x *bq, int volt)
 {
 	u8 val;
@@ -261,6 +296,7 @@ int bq2560x_set_chargevolt(struct bq2560x *bq, int volt)
 	return bq2560x_update_bits(bq, BQ2560X_REG_04, REG04_VREG_MASK,
 				   val << REG04_VREG_SHIFT);
 }
+#endif
 
 int bq2560x_set_input_volt_limit(struct bq2560x *bq, int volt)
 {
@@ -739,9 +775,11 @@ static int bq2560x_init_device(struct bq2560x *bq)
 
 	bq2560x_disable_watchdog_timer(bq);
 
+ifndef BQ25611
 	ret = bq2560x_set_stat_ctrl(bq, bq->platform_data->statctrl);
 	if (ret)
 		pr_err("Failed to set stat pin control mode, ret = %d\n", ret);
+#endif
 
 	ret = bq2560x_set_prechg_current(bq, bq->platform_data->iprechg);
 	if (ret)
@@ -986,6 +1024,31 @@ static int bq2560x_set_vchg(struct charger_device *chg_dev, u32 volt)
 	return bq2560x_set_chargevolt(bq, volt / 1000);
 }
 
+#ifdef BQ25611
+static int bq2560x_get_vchg(struct charger_device *chg_dev, u32 *volt)
+{
+	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
+	u8 reg_val;
+	int ret;
+	unsigned int vbatreg_reg_code;
+
+	ret = bq2560x_read_byte(bq, BQ2560X_REG_04, &reg_val);
+	if (!ret) {
+		vbatreg_reg_code = (reg_val & REG04_VREG_MASK) >>
+							REG04_VREG_SHIFT;
+
+		if (vbatreg_reg_code > BQ25611_VBATREG_THRESH)
+			return ((vbatreg_reg_code - BQ25611_VBATREG_THRESH) *
+						BQ25611_VBATREG_STEP_uV) +
+						BQ25611_VBATREG_THRESH_uV;
+
+		return bq25611_vbatreg_values[vbatreg_reg_code];
+
+	}
+
+	return ret;
+}
+#else
 static int bq2560x_get_vchg(struct charger_device *chg_dev, u32 *volt)
 {
 	struct bq2560x *bq = dev_get_drvdata(&chg_dev->dev);
@@ -1002,6 +1065,7 @@ static int bq2560x_get_vchg(struct charger_device *chg_dev, u32 *volt)
 
 	return ret;
 }
+#endif
 
 static int bq2560x_set_ivl(struct charger_device *chg_dev, u32 volt)
 {
@@ -1198,9 +1262,11 @@ static int bq2560x_charger_probe(struct i2c_client *client,
 		return -EINVAL;
 	}
 
+ifndef BQ25611
 	if (bq->part_no != *(int *)match->data)
 		pr_info("part no mismatch, hw:%s, devicetree:%s\n",
 			pn_str[bq->part_no], pn_str[*(int *) match->data]);
+#endif
 
 	bq->platform_data = bq2560x_parse_dt(node, bq);
 
