@@ -205,15 +205,15 @@ static int bq2560x_set_vchg(struct mtk_charger_info *mchr_info, u32 vchg)
 	unsigned int vbatreg_reg_code;
 	unsigned int array_size = ARRAY_SIZE(bq25611_vbatreg_values);
 
-	if (vchg < BQ25611_VBATREG_MIN_uV)
-		vchg = BQ25611_VBATREG_MIN_uV;
-	else if (vchg > BQ25611_VBATREG_MAX_uV)
-		vchg = BQ25611_VBATREG_MAX_uV;
+	if (vchg < BQ25611_VBATREG_MIN_mV)
+		vchg = BQ25611_VBATREG_MIN_mV;
+	else if (vchg > BQ25611_VBATREG_MAX_mV)
+		vchg = BQ25611_VBATREG_MAX_mV;
 
-	if (vchg > BQ25611_VBATREG_THRESH_uV)
+	if (vchg > BQ25611_VBATREG_THRESH_mV)
 		vbatreg_reg_code = ((vchg -
-		BQ25611_VBATREG_THRESH_uV) /
-		(BQ25611_VBATREG_STEP_uV)) + BQ25611_VBATREG_THRESH;
+		BQ25611_VBATREG_THRESH_mV) /
+		(BQ25611_VBATREG_STEP_mV)) + BQ25611_VBATREG_THRESH;
 	else {
 		for (i = array_size - 1; i > 0; i--) {
 			if (volt >= bq25611_vbatreg_values[i]) {

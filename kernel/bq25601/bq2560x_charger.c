@@ -262,15 +262,15 @@ int bq2560x_set_chargevolt(struct bq2560x *bq, int volt)
 	unsigned int vbatreg_reg_code;
 	unsigned int array_size = ARRAY_SIZE(bq25611_vbatreg_values);
 
-	if (volt < BQ25611_VBATREG_MIN_uV)
-		volt = BQ25611_VBATREG_MIN_uV;
-	else if (volt > BQ25611_VBATREG_MAX_uV)
-		volt = BQ25611_VBATREG_MAX_uV;
+	if (volt < BQ25611_VBATREG_MIN_mV)
+		volt = BQ25611_VBATREG_MIN_mV;
+	else if (volt > BQ25611_VBATREG_MAX_mV)
+		volt = BQ25611_VBATREG_MAX_mV;
 
-	if (volt > BQ25611_VBATREG_THRESH_uV)
+	if (volt > BQ25611_VBATREG_THRESH_mV)
 		vbatreg_reg_code = ((volt -
-		BQ25611_VBATREG_THRESH_uV) /
-		(BQ25611_VBATREG_STEP_uV)) + BQ25611_VBATREG_THRESH;
+		BQ25611_VBATREG_THRESH_mV) /
+		(BQ25611_VBATREG_STEP_mV)) + BQ25611_VBATREG_THRESH;
 	else {
 		for (i = array_size - 1; i > 0; i--) {
 			if (volt >= bq25611_vbatreg_values[i]) {
@@ -775,7 +775,7 @@ static int bq2560x_init_device(struct bq2560x *bq)
 
 	bq2560x_disable_watchdog_timer(bq);
 
-ifndef BQ25611
+#ifndef BQ25611
 	ret = bq2560x_set_stat_ctrl(bq, bq->platform_data->statctrl);
 	if (ret)
 		pr_err("Failed to set stat pin control mode, ret = %d\n", ret);
@@ -1039,8 +1039,8 @@ static int bq2560x_get_vchg(struct charger_device *chg_dev, u32 *volt)
 
 		if (vbatreg_reg_code > BQ25611_VBATREG_THRESH)
 			return ((vbatreg_reg_code - BQ25611_VBATREG_THRESH) *
-						BQ25611_VBATREG_STEP_uV) +
-						BQ25611_VBATREG_THRESH_uV;
+						BQ25611_VBATREG_STEP_mV) +
+						BQ25611_VBATREG_THRESH_mV;
 
 		return bq25611_vbatreg_values[vbatreg_reg_code];
 
@@ -1220,10 +1220,14 @@ static struct of_device_id bq2560x_charger_match_table[] = {
 	{
 	 .compatible = "ti,bq25601",
 	 .data = &pn_data[PN_BQ25601],
-	 }
+	 },
 	{
 	 .compatible = "ti,bq25601D",
 	 .data = &pn_data[PN_BQ25601D],
+	 },
+	{
+	 .compatible = "ti,bq25611",
+	 .data = &pn_data[PN_BQ25611],
 	 },
 	{},
 };
@@ -1262,7 +1266,7 @@ static int bq2560x_charger_probe(struct i2c_client *client,
 		return -EINVAL;
 	}
 
-ifndef BQ25611
+#ifndef BQ25611
 	if (bq->part_no != *(int *)match->data)
 		pr_info("part no mismatch, hw:%s, devicetree:%s\n",
 			pn_str[bq->part_no], pn_str[*(int *) match->data]);
