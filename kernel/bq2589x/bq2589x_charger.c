@@ -56,6 +56,12 @@ static char *pn_str[] = {
 	[PN_BQ25895] = "bq25895",
 };
 
+enum bq2589x_part_no {
+	BQ25890 = 0x03,
+	BQ25892 = 0x00,
+	BQ25895 = 0x07,
+};
+
 struct chg_para{
 	int vlim;
 	int ilim;
